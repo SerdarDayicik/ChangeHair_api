@@ -86,7 +86,7 @@ def change_hair():
             f.write(response.content)
 
         # Oluşturulan görselin URL'ini oluştur
-        output_image_url = f"https://hair.serdardyck.com/model/view-image/{output_filename}/{device_id}"
+        output_image_url = f"https://hair.serdardyck.com/model/view-image/{output_filename}?device_id={device_id}"
 
         # Supabase'e kaydet
         try:
