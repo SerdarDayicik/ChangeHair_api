@@ -31,7 +31,7 @@ def change_hair():
 
         # Form'dan verileri al
         image = request.files['image']
-        data = json.loads(request.form['data'])  # JSON string'i parse et
+        data = json.loads(request.form['data'])
         
         # Data'dan gerekli bilgileri çıkar
         device_id = data.get('device_id')
@@ -42,6 +42,13 @@ def change_hair():
 
         if not device_id:
             return jsonify({"error": "device_id gerekli"}), 400
+
+        # Kullanıcı kontrolü ekleyelim
+        user_response = supabase.table('USER').select("*").eq("device_id", device_id).execute()
+        if not user_response.data:
+            return jsonify({
+                "error": "Geçersiz device_id. Lütfen önce kayıt olun."
+            }), 403
 
         if image.filename == '':
             return jsonify({"error": "Resim seçilmedi"}), 400
