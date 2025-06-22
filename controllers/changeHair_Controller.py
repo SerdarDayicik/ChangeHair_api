@@ -45,6 +45,12 @@ def change_hair():
         prompt = data.get('prompt')
         aspect_ratio = data.get('aspect_ratio', 'match_input_image')
         output_format = data.get('output_format', 'jpg')
+        
+        # Filters bilgilerini al
+        filters = data.get('filters', {})
+        gender = filters.get('gender')
+        haircut_style = filters.get('haircut_style')
+        hair_color = filters.get('hair_color')
 
         if not device_id:
             return jsonify({"error": "device_id gerekli"}), 400
@@ -111,7 +117,10 @@ def change_hair():
                 "device_id": device_id,
                 "user_image": input_image_url,  # Kullanıcının yüklediği resmin URL'i
                 "generated_image": output_image_url,  # Oluşturulan resmin URL'i
-                "prompt": prompt
+                "prompt": prompt,
+                "gender": gender,
+                "haircut_style": haircut_style,
+                "hair_color": hair_color
             }).execute()
             print(f"Database insert successful: {result}")
         except Exception as db_error:
