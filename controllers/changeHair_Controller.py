@@ -71,7 +71,7 @@ def change_hair():
         image.save(input_file_path)
 
         # View-image endpoint'i üzerinden resim URL'i oluştur
-        input_image_url = f"{request.host_url.rstrip('/')}/model/view-image/{input_filename}?device_id={device_id}"
+        input_image_url = f"https://hair.serdardyck.com/model/view-image/{input_filename}?device_id={device_id}"
 
         # Replicate modelini çalıştır
         output = replicate.run(
@@ -107,14 +107,17 @@ def change_hair():
 
         # Supabase'e kaydet
         try:
-            supabase.table('user_images').insert({
+            result = supabase.table('user_images').insert({
                 "device_id": device_id,
                 "user_image": input_image_url,  # Kullanıcının yüklediği resmin URL'i
                 "generated_image": output_image_url,  # Oluşturulan resmin URL'i
                 "prompt": prompt
             }).execute()
+            print(f"Database insert successful: {result}")
         except Exception as db_error:
             print(f"Database error: {str(db_error)}")
+            # Hata olsa bile işlemi devam ettir, sadece log'la
+            # return jsonify({"error": f"Database kayıt hatası: {str(db_error)}"}), 500
 
         return jsonify({
             "success": True,
