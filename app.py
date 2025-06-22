@@ -5,7 +5,7 @@ from flask_cors import CORS
 #controller importları
 from controllers.session_controller import session_bp
 from controllers.changeHair_Controller import model_bp
-
+from controllers.userPremiumAndToken_Controller import premiumAndToken_bp
 
 
 
@@ -20,7 +20,7 @@ CORS(app)
 # Controller'lar
 app.register_blueprint(session_bp, url_prefix='/session')
 app.register_blueprint(model_bp, url_prefix='/model')
-
+app.register_blueprint(premiumAndToken_bp, url_prefix='/check')
 
 
 @app.route('/')

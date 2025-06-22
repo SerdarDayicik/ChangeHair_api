@@ -18,7 +18,7 @@ supabase = get_supabase_client()
 # Uploads klasörünü oluştur
 UPLOAD_FOLDER = Path("uploads")
 UPLOAD_FOLDER.mkdir(exist_ok=True)
-
+ 
 @model_bp.route('/change-hair', methods=['POST'])
 def change_hair():
     try:
@@ -31,17 +31,29 @@ def change_hair():
 
         # Form'dan verileri al
         image = request.files['image']
-        data = json.loads(request.form['data'])
+        
+        # JSON parsing'i try-catch ile sarmalayalım
+        try:
+            data = json.loads(request.form['data'])
+        except json.JSONDecodeError as json_error:
+            return jsonify({
+                "error": f"Geçersiz JSON formatı: {str(json_error)}"
+            }), 400
         
         # Data'dan gerekli bilgileri çıkar
         device_id = data.get('device_id')
-        gender = data.get('gender', 'none')
-        haircut = data.get('haircut', 'Random')
-        hair_color = data.get('hair_color', 'Random')
+        prompt = data.get('prompt')
         aspect_ratio = data.get('aspect_ratio', 'match_input_image')
+        output_format = data.get('output_format', 'jpg')
 
         if not device_id:
             return jsonify({"error": "device_id gerekli"}), 400
+
+        if not prompt:
+            return jsonify({"error": "prompt gerekli"}), 400
+
+        # Prompt'u temizle - başındaki ve sonundaki boşlukları ve newline karakterlerini kaldır
+        prompt = prompt.strip()
 
         # Kullanıcı kontrolü ekleyelim
         user_response = supabase.table('USER').select("*").eq("device_id", device_id).execute()
@@ -63,17 +75,15 @@ def change_hair():
 
         # Replicate modelini çalıştır
         output = replicate.run(
-            "flux-kontext-apps/change-haircut",
+            "black-forest-labs/flux-kontext-pro",
             input={
-                "gender": gender,
-                "haircut": haircut,
-                "hair_color": hair_color,
+                "prompt": prompt,
                 "input_image": input_image_url,
-                "aspect_ratio": aspect_ratio
+                "output_format": output_format
             }
         )
         
-        # FileOutput'u string'e çevir
+        # Output'u kontrol et ve URL'e çevir
         output_url = str(output) if output else None
 
         if not output_url:
@@ -84,8 +94,8 @@ def change_hair():
         if response.status_code != 200:
             return jsonify({"error": "Görsel indirilemedi"}), 500
 
-        # Oluşturulan görsel için rastgele dosya adı oluştur
-        output_filename = f"{uuid.uuid4()}.png"
+        # Oluşturulan görsel için rastgele dosya adı oluştur (output_format'a göre uzantı)
+        output_filename = f"{uuid.uuid4()}.{output_format}"
         output_file_path = UPLOAD_FOLDER / output_filename
 
         # Oluşturulan görseli kaydet
@@ -101,9 +111,7 @@ def change_hair():
                 "device_id": device_id,
                 "user_image": input_image_url,  # Kullanıcının yüklediği resmin URL'i
                 "generated_image": output_image_url,  # Oluşturulan resmin URL'i
-                "gender": gender,
-                "haircut_style": haircut,
-                "haircut_color": hair_color
+                "prompt": prompt
             }).execute()
         except Exception as db_error:
             print(f"Database error: {str(db_error)}")
